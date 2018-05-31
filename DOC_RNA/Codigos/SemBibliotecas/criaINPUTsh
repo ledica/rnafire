@@ -1,0 +1,36 @@
+#!/bin/ksh 
+
+idate=2099-12-01
+edate=2120-01-01
+
+nomerecorte="entrada_10_anos_serra_espinhaco_12_pontos_tsoi"
+#rm ${nomerecorte}
+rm temp*txt
+variaveis=$(ls data/*.txt)
+print data mes lat lon ${variaveis} modis > ${nomerecorte}_cabecalho
+
+while [ $idate -ne $edate ];
+do
+
+  idate=$( date -d "${idate} 12:00 +1 months" +"%Y-%m-%d" )
+  print $idate;
+  mes=$( date -d "${idate} 12:00" +"%m-%d" )
+  sed -n '/.*'${idate}'/p' data/*.txt | awk '{print $1" "$2" "$3" "$4" "$5}' >  temp.txt
+  sed -n '/.*'${mes}'/p' data/saidas.data | awk '{print $3" "$4" "$5}' > temp2.txt
+  while read line; do
+    elatlon=($line);
+    if [ "${elatlon[2]}" != "-1" ]
+      then
+      vetor=$(sed -n '/.*'$idate' '${elatlon[0]}' '${elatlon[1]}'/p' temp.txt | awk '{print $5}')
+      
+      if [ ! -z "$vetor" ]
+        then 
+        print  $idate ${elatlon[0]} ${elatlon[1]} $( date -d "${idate} 12:00 +1 days" +"%m" ) 
+        print  $idate $( date -d "${idate} 12:00 +1 days" +"%m" ) ${elatlon[0]} ${elatlon[1]} $vetor ${elatlon[2]} >> ${nomerecorte}
+      fi
+    fi
+  done < temp2.txt
+
+done
+
+exit
